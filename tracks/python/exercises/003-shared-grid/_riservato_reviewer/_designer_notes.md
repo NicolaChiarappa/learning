@@ -1,63 +1,63 @@
-# Note del designer — 003 (per il reviewer, Nick non le apre)
+# Note del designer — 003 (per il reviewer e l'orchestratore, Nick non le apre)
 
-La chiave con gli esiti attesi è in `chiave.md` (stessa cartella). Il pytest.ini non raccoglie `test_hidden.py`: lancialo con il file esplicito (`pytest -q test_hidden.py`, dalla cartella dell'esercizio).
+Formato leggero (CLAUDE.md, dal 2026-10-12). La chiave con gli esiti attesi è in `chiave.md`. `pytest.ini` raccoglie solo `test_seating.py` e `test_regression.py`: i test nascosti si lanciano con il file esplicito (`pytest -q test_hidden.py`).
 
-## Cosa allena
-- E001: il "chi guarda cosa" è il contenuto dell'esercizio (design sezione 1, sezione B), non un campo di compilazione. Solo sulle righe con indice a sinistra e sul contenitore annidato.
-- E003 (riconferma): la lista esterna conserva riferimenti; lo stesso oggetto è guardato da tre posizioni.
-- E004: riassegnare una posizione (`hall[row] = ...`, `close_row`) contro mutare l'oggetto guardato (`hall[row][seat] = ...`, `book_seat`; `hall[row] += ...`, `add_seat`). Per questo il test di `close_row` è verde sul codice difettoso.
-- E005 (ambito `contenitore[chiave] += ...`): `hall[row] += [FREE]` modifica sul posto la lista condivisa; `hall[row] = hall[row] + [FREE]` crea una lista nuova e sposta la posizione. Assorbe la precondizione non svolta di 002 (snippet 5).
-- E006: `free_per_row` restituisce `['3', '3']` invece di `[3, 3]`; pytest mostra `assert ['3', '3'] == [3, 3]` e `At index 0 diff: '3' != 3`. Difetto volutamente indipendente dall'aliasing: serve anche a verificare se Nick attribuisce tutti i rossi alla stessa causa (sezione A, "cause raggruppate").
-- P02: abitudine a due esiti scritti prima di eseguire (design sezione 4, risposte D, K). P03: spunta delle regole, output incollato, test lasciati rossi con motivazione. P04: stima dei test nascosti, coerente con i "no"/"non so". P07: casi limite ricavati dalle regole, su chiamate concrete. P09/P10: tempo con punti di controllo a 40/70/100 e regola di taglio.
+## Perimetro rispetto alla versione a campi
+- Tolti: design.md, risposte.md, test_delivery.py, sezione K (estensione stringhe), punti di controllo e cancelli.
+- R8 (negativi) resta numerata ma facoltativa. Se non la implementa, il test nascosto 8 è rosso per scelta: non penalizzare, tenerne conto nella calibrazione ("su 10", con 9 attesi se salta R8).
+- Tenuto `free_per_row` con `str(...)`: costa una riga di correzione e porta E006 senza campi aggiuntivi.
+- E005 sulle stringhe (`names[0] += "*"`) non è più coperto: da chiedere in 004 se E005 resta aperto.
 
-## Il difetto (anche in `chiave.md`)
-`build_hall` costruisce una sola lista `free_row` e la mette in tutte le posizioni della lista esterna: `hall[0] is hall[1] is hall[2]`. Due liste in tutto per `build_hall(3, 2)`: l'esterna e quella condivisa. Costume diverso dal test d'ingresso: la lista è creata prima e riusata in una comprehension, che sembra costruire file nuove a ogni giro.
+## Cosa allena (emerge da codice, test e chiacchierata, non da campi)
+- E001/E003: chi guarda quale lista dopo la costruzione (tre posizioni, una lista).
+- E004/E005 (ambito `contenitore[chiave] += ...`): `hall[row] += [FREE]` modifica sul posto la lista guardata; `hall[row] = hall[row] + [FREE]` crea una lista nuova e sposta la posizione. `close_row` verde perché usa `=`.
+- E006: `assert ['3', '3'] == [3, 3]` letto correttamente.
+- P02 (esperimenti con esito alternativo diverso scritto prima), P04 (stima dei test nascosti), P07 (casi limite dalle regole).
 
-## Perché i test base si comportano così
-Verdi sul codice originale (5): forma, zero file, una sola fila, `close_row`, `book_seat` che restituisce `None`. Rossi (3): `test_book_seat_changes_only_that_seat` e `test_add_seat_grows_only_that_row` (aliasing, stessa causa), `test_free_per_row_counts_free_seats` (stringa invece di int, causa diversa).
-`close_row` è verde perché `hall[row] = ...` sposta la posizione su una lista nuova: l'unica fila che "esce" dal gruppo condiviso è quella chiusa.
+## Il difetto
+`build_hall` crea una sola `free_row` e la mette in tutte le posizioni: `hall[0] is hall[1] is hall[2]`. La lista è creata prima della comprehension, che sembra costruire file nuove a ogni giro.
 
-## Test nascosti suggeriti (10, ogni regola almeno un test)
-1. R1: forma con più dimensioni (es. `build_hall(3, 4)`), tutti `"free"`.
-2. R2: `build_hall(3, 2)`, nessuna coppia di file con `is` uguale; `hall[0] is not hall[1]`.
-3. R2/R3: `book_seat` su file diverse in sequenza; verificare tutte le posizioni.
-4. R4: `add_seat` due volte su file diverse; lunghezze `[3, 2, 3]` o equivalenti.
-5. R5: `close_row` e poi `add_seat` sulla stessa fila e su un'altra (la fila chiusa non deve più condividere né essere condivisa).
-6. R6: tipi: `all(type(n) is int for n in result)`; sala con file prenotate diverse.
-7. R7: `build_hall(0, 5) == []`; `build_hall(3, 0) == [[], [], []]` e dopo `add_seat(hall, 1)` le altre due restano vuote.
-8. R8: `pytest.raises(ValueError, match="rows")` per `build_hall(-1, 2)`; `match="seats_per_row"` per `build_hall(2, -1)`.
-9. R9: valore di ritorno `None` di `add_seat` e `close_row`; due chiamate a `build_hall` non condividono file (`build_hall(2,2)[0] is not build_hall(2,2)[0]`, ma soprattutto modificare l'una non cambia l'altra).
-10. Correzione robusta: indipendenza dopo una sequenza mista (book, add, close, book) confrontata con un modello ricostruito a mano.
+## Test base
+Verdi (5): forma, zero file, una fila, `close_row`, `book_seat` che restituisce `None`. Rossi (3): `test_book_seat_changes_only_that_seat`, `test_add_seat_grows_only_that_row` (aliasing), `test_free_per_row_counts_free_seats` (stringhe, causa diversa: verificare che non finiscano nello stesso gruppo).
 
-## Casi limite che ho in mente (elenco completo)
-- Dimensione zero: file zero; posti zero con file multiple (l'aliasing resta anche con liste vuote: `add_seat` fa crescere tutte).
-- Dimensione negativa: `rows` e `seats_per_row`, messaggio con il nome. Nel codice originale non solleva (`range(-1)` vuoto, `[FREE] * -1` vuoto).
-- `rows=1`: il difetto non si vede; unico caso in cui i test base passano sul codice originale.
-- `add_seat` su `build_hall(n, 0)` (liste vuote condivise).
-- Sequenza `close_row` poi `book_seat` su un'altra fila: sul codice originale nascosto dal fatto che la fila chiusa è uscita dal gruppo.
-- Sala usata dopo `close_row`: R5 dice la fila resta della stessa lunghezza (anche se 0).
-- `book_seat` su posto già `"taken"` o su `"closed"`: la consegna non lo dice. Chi lo nota in design sezione 2 ("la consegna non lo dice") guadagna; non c'è test nascosto e qualunque comportamento dichiarato è accettabile.
-- Indici fuori dai limiti (`hall[5]`): `IndexError` naturale, non specificato. Indici negativi: Python accetta; non specificato.
-- Tipi non int (`build_hall(2.0, 3)`, `True`): `TypeError` da `range`; `True` vale 1. Non specificato; non penalizzare.
-- Grandi volumi: `build_hall(10**6, 10)` regge ma costa memoria: nessun test.
-- Stesso oggetto tra chiamate diverse (R9): una costante a livello modulo con la riga di partenza sarebbe un secondo aliasing; verificare che la correzione non l'abbia introdotto.
+## Test nascosti suggeriti (10)
+1. R1 forma `build_hall(3, 4)`. 2. R2 nessuna coppia di file con `is` uguale. 3. R2/R3 `book_seat` su file diverse in sequenza. 4. R4 `add_seat` su file diverse, lunghezze `[3, 2, 3]`. 5. R5 `close_row` poi `add_seat` su fila chiusa e su un'altra. 6. R6 `type(n) is int` per tutti. 7. R7 `build_hall(0, 5) == []`, `build_hall(3, 0) == [[], [], []]` e `add_seat` su una sola fila. 8. R8 `pytest.raises(ValueError, match="rows")` / `match="seats_per_row"` (facoltativo). 9. R9 `None` di ritorno e due `build_hall` indipendenti. 10. Sequenza mista (book, add, close, book) contro un modello costruito a mano.
+
+## Casi limite che ho in mente
+- Zero file; zero posti con più file (l'aliasing resta con liste vuote: `add_seat` fa crescere tutte).
+- Negativi: nel codice originale non sollevano (`range(-1)` vuoto, `[FREE] * -1` vuoto).
+- `rows=1`: il difetto non si vede.
+- `close_row` poi `book_seat` su un'altra fila: difetto nascosto perché la fila chiusa è uscita dal gruppo.
+- Fila chiusa di lunghezza 0 resta di lunghezza 0.
+- `book_seat` su posto già `taken`/`closed`, indici fuori limiti o negativi, tipi non int: non specificati, nessun test; chi li nota guadagna.
+- Costante a livello modulo con la riga di partenza: secondo aliasing (R9).
 
 ## Trappole di design tipiche
-1. **Correggere il sintomo.** Riscrivere `add_seat` con `hall[row] = hall[row] + [FREE]` rende verde il test di `add_seat` ma lascia `book_seat` rotto: la sezione D esiste per farlo vedere. Chi riscrive solo `add_seat` e dichiara "ho finito" non ha capito.
-2. **Correggere in `book_seat`/`add_seat` con copie difensive** (`hall[row] = list(hall[row])` prima di modificare): funziona per le operazioni ma lascia la sala corrotta (R2: sotto `is` le file restano condivise).
-3. **`[[FREE] * n] * rows`**: stesso difetto in un'altra veste. Controllare che non sia stato riscritto così.
-4. **`copy.deepcopy(free_row)` per ogni file**: corretto ma pesante; ammesso se la scelta (sezione E) lo motiva, preferibile una lista nuova per giro.
-5. **Cambiare le firme o i test base** per farli passare: il test di interfaccia lo rileva solo per le firme.
-6. **Attribuire tutti i rossi a una sola causa**: `free_per_row` è un difetto diverso. Sezione A: se `test_free_per_row_counts_free_seats` finisce nello stesso gruppo degli altri, la causa è sbagliata (E001, P01).
-7. **Esperimento che non può fallire** (P02): es. `print(hall[0] is hall[1])` con "Se ho torto: True"; cercare output uguali nelle due righe (il test lo blocca) e output che il modello rivale non produrrebbe mai.
-8. **Spiegazione per tipo**: "le liste sono mutabili quindi si condividono". Non spiega perché `close_row` non mostra il difetto. La sezione B ("dopo:") e il confronto lo mettono alla prova.
-9. **Sezione F con citazione non pertinente**: la citazione è letterale (il test lo impone) ma può essere la frase sbagliata. Controllare che parli della riga con il difetto e che "reggeva" sia onesto (confrontare con design sezione 1).
-10. **Output ottenuto uguale alle righe previste in modo sospetto** (P03 sezione "riscritto a mano"): il test controlla la coerenza tra campi, non l'origine. Se l'output sembra scritto a mano, chiedere di rilanciare.
-11. **Stima dei test nascosti**: confrontare con il numero reale; la regola di coerenza è già nel test.
+1. Correggere il sintomo: `add_seat` con `hall[row] = hall[row] + [FREE]` rende verde un test e lascia `book_seat` rotto (chi lo fa e non lo nota non ha il modello).
+2. Copie difensive in `book_seat`/`add_seat` (`hall[row] = list(hall[row])`): le operazioni funzionano, la sala resta con file condivise (R2).
+3. `[[FREE] * n] * rows`: lo stesso difetto riscritto.
+4. `deepcopy(free_row)` per ogni fila: corretto ma pesante; ammesso se motivato.
+5. Cambiare firme o test base.
+6. Attribuire tutti i rossi alla stessa causa (`free_per_row` è indipendente).
+7. Esperimento che non può fallire (esito alternativo identico o impossibile).
+8. Spiegazione per tipo ("le liste sono mutabili"): non spiega perché `close_row` non mostra il difetto.
+9. Test di regressione che fallisce per la causa sbagliata (stringhe) o che passa sul codice originale.
+10. Output incollato che sembra riscritto: chiedere di rilanciare.
 
-## Cosa distingue una soluzione buona da una eccellente
-- **Buona:** ogni file costruito con una lista nuova; test base verdi; `free_per_row` corretto; R7 e R8 rispettate; regressione che fallisce prima e passa dopo; esperimento D con due esiti diversi e output coerente; "chi guarda cosa" corretto nella sezione 1 (tre posizioni, una lista).
-- **Eccellente:** la sezione 1 è giusta prima di eseguire e la 3 la usa (prevede esattamente i due test dell'aliasing rossi, `close_row` verde); la sezione B spiega che `close_row` esce dal gruppo condiviso e gli altri due no; la sezione C testa una sequenza che nessun base usa e include una verifica con `is`; la sezione D conclude che il difetto è in `build_hall` e non in `add_seat`; la validazione è in un solo punto con il nome dell'argomento nel messaggio; la regola finale distingue "indice a sinistra con `=`" (sposta la posizione) da "indice a sinistra con `+=` su un oggetto che si modifica sul posto"; stima dei test nascosti corretta; zero parole "tipo mutabile" come causa. Nomi in inglese e per ruolo in test, esperimenti e codice.
+## Buona contro eccellente
+- Buona: una lista nuova per fila, creata dentro il giro; test base verdi; `free_per_row` corretto; R7 rispettata; regressione che fallisce prima e passa dopo; "chi guarda cosa" corretto.
+- Eccellente: previsione giusta prima di eseguire, usata poi (rossi attesi esatti, `close_row` verde); spiega che `close_row` esce dal gruppo condiviso e gli altri due no; regressione con sequenza che nessun test base usa e verifica con `is`; conclude che il difetto è in `build_hall` e non in `add_seat`; regola finale che distingue `=` su una posizione (la sposta) da `+=` su un oggetto modificabile sul posto; stima dei nascosti corretta e coerente con le regole che ammette di non coprire; nomi in inglese e per ruolo.
 
-## Cosa verificare dove la precondizione di 002 non è stata chiusa
-Sezione D (e K se fatta): Nick deve prevedere con due esiti che `hall[row] = hall[row] + [FREE]` rende verde il test di `add_seat` senza correggere `book_seat`. Se sbaglia la previsione o conclude "basta cambiare add_seat", E005 resta aperto; se spiega che `+=` modifica la lista condivisa e `= ... +` ne crea una nuova per quella posizione, E005 (ambito indice a sinistra) è superato per le liste. Sulle stringhe (`names[0] += "*"`, K) c'è l'altra metà (nuovo oggetto, posizione spostata, alias invariato); se K è tagliata, E005 resta parzialmente aperto per le stringhe: da chiedere in 004.
+## Domande per la chiacchierata finale (orchestratore, a voce; 3-4 su 6, scegliere sui punti deboli emersi)
+1. Dopo `hall = build_hall(3, 2)` nel codice originale, quante liste esistono in tutto e chi guarda ciascuna? Disegnalo a parole.
+   - Solida: due liste (esterna e una interna), le tre posizioni guardano la stessa; ragiona sulle posizioni, non sul tipo. A memoria: "le liste sono mutabili" o "sono riferimenti" senza contare gli oggetti; numero sbagliato di liste.
+2. Nel codice originale `close_row` non mostrava il problema e `book_seat` sì. Cosa fa diversamente la prima riga della seconda?
+   - Solida: distingue ciò che agisce sulla posizione della lista esterna da ciò che agisce sull'oggetto guardato, e dice cosa guarda `hall[row]` dopo. A memoria: "una crea una lista nuova" senza dire dove finisce la nuova e chi resta sulla vecchia; spiega con il tipo.
+3. Se in `add_seat` scrivessi `hall[row] = hall[row] + [FREE]` invece di `+=` e lasciassi tutto il resto com'è, cosa cambierebbe nei test, e cosa resterebbe com'è? Perché?
+   - Solida: prevede senza eseguire che `add_seat` diventa verde e `book_seat` no, e spiega con "lista nuova per quella posizione" e "la lista condivisa non viene toccata". A memoria: "sono equivalenti" o "`+=` è più veloce"; prevede tutto verde o tutto rosso senza motivo.
+4. Perché dopo la tua correzione le file sono indipendenti? Cosa succede, riga per riga, quando `build_hall` costruisce la terza fila?
+   - Solida: la costruzione della lista è dentro il giro, quindi un oggetto nuovo a ogni iterazione; sa dire cosa sarebbe cambiato spostandola fuori. A memoria: "perché ho copiato" o "perché ho usato la comprehension" senza dire quando la lista viene creata.
+5. Leggi questa riga di pytest: `assert ['3', '3'] == [3, 3]` con `At index 0 diff: '3' != 3`. Cosa restituisce la funzione, cosa si aspetta il test, perché si vedono gli apici?
+   - Solida: sinistra = valore restituito, lista di stringhe; destra = atteso, interi; gli apici sono la rappresentazione delle stringhe nei contenitori; la differenza è nel tipo, non nel valore stampato. A memoria: "è un problema di tipi" senza dire quale lato è quale, o dubbio su quale sia l'atteso.
+6. Il tuo test di regressione: se lo lanciassi sul codice originale, per quale motivo esatto fallirebbe? Esisterebbe un modo di farlo fallire per un'altra causa?
+   - Solida: indica la causa (file condivise) e vede che un test sulle stringhe fallirebbe per un'altra; sa che sequenza o `is` isola l'aliasing. A memoria: "fallisce perché il codice è sbagliato"; test che mescola le due cause.
