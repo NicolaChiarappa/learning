@@ -9,12 +9,13 @@ Prices are integer cents.
 import time
 
 
-def new_cart(customer, items=[], created_at=time.time()):
-    """Create a cart for `customer`.
+def new_cart(customer, items=None, created_at=None):
 
-    `items` are the items the cart starts with. `created_at` is the moment the
-    cart was created.
-    """
+    if items is None:
+        items = list()
+    if created_at is None:
+        created_at = time.time()
+
     return {"customer": customer, "items": items, "created_at": created_at}
 
 
@@ -28,7 +29,7 @@ def total_cents(cart):
     total = 0
     for _name, price in cart["items"]:
         total += price
-    return str(total)
+    return total
 
 
 def empty_cart(cart):
