@@ -98,7 +98,8 @@ Motivo: volume di pratica e idiomi. In 20 giorni ci sono stati 4 giorni di lavor
 **Esercizi Exercism**
 - Fonte: `vendor/exercism-python/` (clone di `exercism/python`, MIT, non tracciato da git). Ordine in `tracks/python/exercism/lista.md`, scelto dall'orchestratore e riordinabile dal planner.
 - Import: `tools/exercism_new.sh <slug>` crea `tracks/python/exercism/NNN-slug/` con README, scheletro, test e `appunti.md`, senza `.meta/` (soluzione) e senza `hints.md`.
-- Lavoro di Nick: "Prima" (2 righe) → codice → pytest → "Seconda passata" → solo allora la soluzione di riferimento (`vendor/.../<slug>/.meta/`) → "Dopo" (1 riga). Una riga in `tracks/python/exercism/log.md`.
+- Sequenza: "Prima" (2 righe) → codice → pytest → "Seconda passata" → solo allora la soluzione di riferimento (`vendor/.../<slug>/.meta/`) → "Dopo" (1 riga). Una riga in `tracks/python/exercism/log.md`.
+- **Divisione del lavoro (richiesta di Nick, 2026-10-30): Nick parla solo in chat e scrive codice; tutto il resto lo fa l'orchestratore.** Import dell'esercizio, sintesi della consegna in chat (poche righe, mai il README intero), lancio dei test con output ridotto all'essenziale, trascrizione di "Prima", "Seconda passata" e "Dopo" in `appunti.md`, confronto mostrato in chat con la soluzione di riferimento (dopo la seconda passata), riga del log, commit. Nessun copia-incolla e nessuna apertura di file chiesta a Nick oltre al file di codice. Messaggi corti.
 - **Eccezione alla regola 1**: la soluzione di riferimento dei maintainer si apre solo dopo test verdi e seconda passata scritta. Prima, indizi a livelli come sempre (`hints.md` resta in `vendor/` come materiale per gli indizi dell'orchestratore).
 - Niente verbale né review per singolo esercizio. Una volta a settimana `reviewer` prende 2 esercizi a campione; il `mentor` legge il log nella revisione settimanale.
 
