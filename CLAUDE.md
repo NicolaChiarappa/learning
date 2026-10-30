@@ -88,6 +88,20 @@ Deciso con Nick dopo gli esercizi 001-002: il formato a campi era cresciuto a og
 - Ipotesi prima del codice, previsione scritta prima di eseguire, confronto e ogni si/no fatti da Nick.
 - L'orchestratore sistema solo la forma e aiuta sempre su terminale e IDE.
 
+## Formato Exercism (in prova dal 2026-10-31, deciso con Nick il 2026-10-30)
+Motivo: volume di pratica e idiomi. In 20 giorni ci sono stati 4 giorni di lavoro e 6 esercizi da circa 2 ore ciascuno. Prova di una settimana, misurata su: giorni rispettati, esercizi chiusi, riscritture dopo il confronto, esito degli snippet di uscita M01.
+
+**Ritmo**
+- Ogni giorno 18:45-19:45: un esercizio Exercism.
+- 2 volte a settimana: un esercizio del sistema (`exercise-designer` → chiacchierata → `reviewer`), massimo 60 minuti, sugli errori aperti in `errors.md`.
+
+**Esercizi Exercism**
+- Fonte: `vendor/exercism-python/` (clone di `exercism/python`, MIT, non tracciato da git). Ordine in `tracks/python/exercism/lista.md`, scelto dall'orchestratore e riordinabile dal planner.
+- Import: `tools/exercism_new.sh <slug>` crea `tracks/python/exercism/NNN-slug/` con README, scheletro, test e `appunti.md`, senza `.meta/` (soluzione) e senza `hints.md`.
+- Lavoro di Nick: "Prima" (2 righe) → codice → pytest → "Seconda passata" → solo allora la soluzione di riferimento (`vendor/.../<slug>/.meta/`) → "Dopo" (1 riga). Una riga in `tracks/python/exercism/log.md`.
+- **Eccezione alla regola 1**: la soluzione di riferimento dei maintainer si apre solo dopo test verdi e seconda passata scritta. Prima, indizi a livelli come sempre (`hints.md` resta in `vendor/` come materiale per gli indizi dell'orchestratore).
+- Niente verbale né review per singolo esercizio. Una volta a settimana `reviewer` prende 2 esercizi a campione; il `mentor` legge il log nella revisione settimanale.
+
 ## Ritmi periodici
 - **Ogni 2 settimane per track:** mini-verifica con `assessor` (modalità verifica), poi `planner` aggiorna la roadmap.
 - **Ogni domenica, o quando Nick lo chiede:** `mentor` in modalità settimanale. Produce `weekly/YYYY-Www.md`, che riassume i log della settimana.
